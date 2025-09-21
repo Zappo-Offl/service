@@ -86,6 +86,11 @@ class NebulaService {
     }
   }
   
+  // Get transaction URL for explorer
+  getTransactionUrl(txHash) {
+    return `https://sepolia.arbiscan.io/tx/${txHash}`;
+  }
+  
   // Send ETH transaction
   async sendTransaction(wallet, to, amount, gasLimit = null) {
     try {
@@ -122,7 +127,8 @@ class NebulaService {
           value: amount,
           gasLimit: tx.gasLimit,
           gasPrice: tx.gasPrice.toString(),
-          nonce: transaction.nonce || 0
+          nonce: transaction.nonce || 0,
+          explorerUrl: this.getTransactionUrl(transaction.hash)
         };
       } else {
         // For imported wallets, use ethers directly
@@ -137,7 +143,8 @@ class NebulaService {
           value: amount,
           gasLimit: tx.gasLimit,
           gasPrice: tx.gasPrice.toString(),
-          nonce: transaction.nonce
+          nonce: transaction.nonce,
+          explorerUrl: this.getTransactionUrl(transaction.hash)
         };
       }
       
@@ -165,8 +172,8 @@ class NebulaService {
         hash: txHash,
         blockNumber: receipt.blockNumber,
         gasUsed: receipt.gasUsed.toString(),
-        effectiveGasPrice: receipt.effectiveGasPrice.toString(),
-        confirmations: receipt.confirmations
+        effectiveGasPrice: receipt.effectiveGasPrice ? receipt.effectiveGasPrice.toString() : '0',
+        confirmations: receipt.confirmations || 0
       };
       
     } catch (error) {
@@ -197,7 +204,7 @@ class NebulaService {
         gasPrice: tx.gasPrice.toString(),
         nonce: tx.nonce,
         blockNumber: tx.blockNumber,
-        confirmations: tx.confirmations
+        confirmations: tx.confirmations || 0
       };
       
     } catch (error) {
@@ -233,7 +240,7 @@ class NebulaService {
               hash: tx.hash,
               from: tx.from,
               to: tx.to,
-               value: ethers.utils.formatEther(tx.value),
+              value: ethers.utils.formatEther(tx.value),
               blockNumber: tx.blockNumber,
               timestamp: block.timestamp,
               type: tx.from.toLowerCase() === address.toLowerCase() ? 'outgoing' : 'incoming'

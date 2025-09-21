@@ -297,7 +297,9 @@ async executePendingTransaction(from, phone, pendingTx) {
         throw new Error('Transaction failed. See logs for details.');
       }
 
-      await this.sendMessage(from, `✅ Transaction successful! Amount: ${data.amount} ETH, To: ${data.to}, TxHash: ${txResult.hash}`);
+      await this.sendMessage(from, `✅ Transaction successful! Amount: ${data.amount} ETH, To: ${data.to}, TxHash: ${txResult.hash}
+
+https://sepolia.arbiscan.io/tx/${txResult.hash}`);
     }
 
     // Update balance & log
