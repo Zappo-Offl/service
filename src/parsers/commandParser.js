@@ -27,6 +27,15 @@ class CommandParser {
       // Greetings
       GREETING: /^(hi|hello|hey|good\s+morning|good\s+afternoon|good\s+evening|hola|namaste)/i,
       
+      // Menu options
+      SEND_FUNDS: /^(send\s+funds|send\s+money|funds)/i,
+      EXPLORE_DEFI: /^(explore\s+defi|defi|dashboard|explore)/i,
+      SEND_TO_CONTACT: /^(send\s+to\s+contact|contact)/i,
+      
+      // DeFi actions
+      SWAP_USDC: /^(swap\s+usdc|swap|exchange\s+usdc|trade\s+usdc)/i,
+      DEPOSIT_FUNDS: /^(deposit\s+funds|deposit|vault|earn\s+yield|lending)/i,
+      
       // Mainnet status
       MAINNET_STATUS: /^(mainnet|mainnet\s+status|check\s+mainnet|my\s+mainnet)/i,
       

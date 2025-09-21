@@ -211,6 +211,26 @@ class CommandHandler {
         case 'SEND_ARB_START':
           await this.handleSendTransaction(from, phone, { intent: 'SEND_ARB_START' });
           break;
+
+        case 'SEND_FUNDS':
+          await this.handleSendFundsMenu(from, phone);
+          break;
+
+        case 'EXPLORE_DEFI':
+          await this.handleExploreDeFiMenu(from, phone);
+          break;
+
+        case 'SEND_TO_CONTACT':
+          await this.handleSendToContactMenu(from, phone);
+          break;
+
+        case 'SWAP_USDC':
+          await this.handleSwapUSDC(from, phone);
+          break;
+
+        case 'DEPOSIT_FUNDS':
+          await this.handleDepositFunds(from, phone);
+          break;
           
         case 'ADD_CONTACT':
           await contactHandler.handleAddContact(from, phone, parameters);
@@ -406,28 +426,33 @@ Try these testnet commands:
         return;
       }
       
-      // Existing user - show personalized greeting with balance
+      // Existing user - show fancy options
       const wallet = await walletHandler.getUserWallet(phone);
       if (wallet) {
         // Get fresh balance from blockchain
         const freshBalance = await nebulaService.getBalance(wallet.address);
         const balanceValue = parseFloat(freshBalance.balance) || 0;
         
-        await this.sendMessage(from, `👋 *Hello! Welcome back to ZAPPO* 🧪
+        await this.sendMessage(from, `👋 *Hey there, Crypto Explorer!* 🚀
 
-💰 *Your Testnet Balance:* ${balanceValue.toFixed(6)} ETH
+💰 *Balance:* ${balanceValue.toFixed(6)} ETH (Testnet)
 
-📍 *Wallet:* \`${wallet.address}\`
+🎯 *What's your next move?*
 
-🧪 *Testnet Mode* - Safe to experiment!
+💸 **Send Funds to Friends**
+   • Quick transfers to contacts
+   • Share crypto instantly
+   • Type: "send funds"
 
-*What would you like to do?*
-• Type "balance" to refresh your balance
-• Type "send ETH" to send testnet ETH
-• Type "history" to see recent transactions
-• Type "help" for all commands
+🌊 **Explore DeFi**
+   • Check your balance & history
+   • View transaction details  
+   • Type: "explore defi"
 
-💡 *Get more testnet ETH:* [Free Faucet](https://arbitrum.faucet.dev/ArbSepolia)`);
+🆘 **Need Help?**
+   • Type "help" for all commands
+
+🧪 *Testnet Mode - Safe to experiment!*`);
       } else {
         // User exists but no wallet - shouldn't happen, but handle gracefully
         await this.sendMessage(from, `👋 Hello! It seems there was an issue with your wallet. Please type "create wallet" to set up a new one.`);
@@ -468,6 +493,242 @@ You can type cancel to stop anytime.`);
       
     } catch (error) {
       logger.error('Error starting wallet import:', error);
+      await this.sendMessage(from, `❌ Error: ${error.message}`);
+    }
+  }
+
+  // Handle "Send Funds" menu option
+  async handleSendFundsMenu(from, phone) {
+    try {
+      // Check if user has a wallet
+      const user = await users.findUserByPhone(phone);
+      if (!user) {
+        await this.sendMessage(from, '❌ You need to create a wallet first! Send "create wallet" to get started.');
+        return;
+      }
+
+      await this.sendMessage(from, `💸 *Send Funds to Friends* 🚀
+
+Choose how you want to send:
+
+📱 **Send to Contact**
+   • Pick from your WhatsApp contacts
+   • Type: "send to contact"
+
+💰 **Send Specific Amount**
+   • Send ETH to any address
+   • Type: "send 0.1 ETH to 0x..."
+
+📲 **Quick Send**
+   • Share contact and I'll ask for amount
+   • Just share a contact!
+
+💡 **Tips:**
+   • All transactions are on testnet
+   • Gas fees are very low
+   • Type "balance" to check funds first
+
+🔙 Type "hi" to go back to main menu`);
+      
+    } catch (error) {
+      logger.error('Error handling send funds menu:', error);
+      await this.sendMessage(from, `❌ Error: ${error.message}`);
+    }
+  }
+
+  // Handle "Send to Contact" option
+  async handleSendToContactMenu(from, phone) {
+    try {
+      // Check if user has a wallet
+      const user = await users.findUserByPhone(phone);
+      if (!user) {
+        await this.sendMessage(from, '❌ You need to create a wallet first! Send "create wallet" to get started.');
+        return;
+      }
+
+      // Set user state to await contact sharing
+      this.userStates.set(phone, {
+        state: 'AWAITING_CONTACT_FOR_SEND',
+        timestamp: Date.now()
+      });
+
+      await this.sendMessage(from, `📱 *Send to WhatsApp Contact* 🚀
+
+Please share a contact from your WhatsApp:
+
+1️⃣ Tap the 📎 (attachment) button
+2️⃣ Select "Contact"  
+3️⃣ Choose the person you want to send ETH to
+4️⃣ Send the contact
+
+I'll then ask you how much ETH to send! 
+
+💡 *Tip:* The person doesn't need ZAPPO yet - they'll get a claim link to receive the funds.
+
+🔙 Type "cancel" to go back`);
+      
+    } catch (error) {
+      logger.error('Error handling send to contact menu:', error);
+      await this.sendMessage(from, `❌ Error: ${error.message}`);
+    }
+  }
+
+  // Handle "Explore DeFi" menu option  
+  async handleExploreDeFiMenu(from, phone) {
+    try {
+      // Check if user has a wallet
+      const user = await users.findUserByPhone(phone);
+      if (!user) {
+        await this.sendMessage(from, '❌ You need to create a wallet first! Send "create wallet" to get started.');
+        return;
+      }
+
+      const wallet = await walletHandler.getUserWallet(phone);
+      
+      await this.sendMessage(from, `🌊 *Explore DeFi* �
+
+Your DeFi Dashboard:
+
+� **Swap Tokens**
+   • Swap ETH ↔ USDC
+   • Best rates on Arbitrum
+   • Type: "swap usdc"
+
+🏦 **Deposit to Vault**
+   • Earn yield on your ETH
+   • Secure lending protocols
+   • Type: "deposit funds"
+
+📊 **Portfolio Management**
+   • "balance" - Check current balance
+   • "history" - View recent transactions
+
+🔍 **Wallet Details**
+   • Address: \`${wallet?.address || 'Loading...'}\`
+   • Network: Arbitrum Sepolia (Testnet)
+
+🎯 **Quick Actions:**
+   • "swap usdc" - Exchange ETH for USDC
+   • "deposit funds" - Earn yield on deposits
+   • "balance" - Check current balance
+   • "history" - View transaction history
+
+🧪 **Testnet Info:**
+   • Practice DeFi safely with testnet tokens
+   • No real money involved
+   • Perfect for learning!
+
+🔙 Type "hi" to go back to main menu`);
+      
+    } catch (error) {
+      logger.error('Error handling explore DeFi menu:', error);
+      await this.sendMessage(from, `❌ Error: ${error.message}`);
+    }
+  }
+
+  // Handle "Swap USDC" option
+  async handleSwapUSDC(from, phone) {
+    try {
+      // Check if user has a wallet
+      const user = await users.findUserByPhone(phone);
+      if (!user) {
+        await this.sendMessage(from, '❌ You need to create a wallet first! Send "create wallet" to get started.');
+        return;
+      }
+
+      const wallet = await walletHandler.getUserWallet(phone);
+      const freshBalance = await nebulaService.getBalance(wallet.address);
+      const ethBalance = parseFloat(freshBalance.balance) || 0;
+
+      await this.sendMessage(from, `💱 *Swap ETH ↔ USDC* 🔄
+
+Current Balance: ${ethBalance.toFixed(6)} ETH
+
+🔄 **Swap Options:**
+
+📤 **ETH → USDC**
+   • Convert ETH to USDC stablecoin
+   • Get stable value exposure
+   • Type: "swap eth to usdc"
+
+📥 **USDC → ETH**
+   • Convert USDC back to ETH
+   • Re-enter ETH exposure
+   • Type: "swap usdc to eth"
+
+💡 **Swap Benefits:**
+   • Instant swaps via Uniswap V3
+   • Best rates on Arbitrum
+   • Low gas fees on testnet
+
+⚠️ **Coming Soon:**
+   This feature is being integrated with DEX protocols. 
+   For now, you can practice with direct ETH transfers!
+
+🎯 **Alternative Actions:**
+   • "send eth" - Send ETH to contacts
+   • "balance" - Check current balance
+
+🔙 Type "hi" to go back to main menu`);
+      
+    } catch (error) {
+      logger.error('Error handling swap USDC:', error);
+      await this.sendMessage(from, `❌ Error: ${error.message}`);
+    }
+  }
+
+  // Handle "Deposit Funds" option
+  async handleDepositFunds(from, phone) {
+    try {
+      // Check if user has a wallet
+      const user = await users.findUserByPhone(phone);
+      if (!user) {
+        await this.sendMessage(from, '❌ You need to create a wallet first! Send "create wallet" to get started.');
+        return;
+      }
+
+      const wallet = await walletHandler.getUserWallet(phone);
+      const freshBalance = await nebulaService.getBalance(wallet.address);
+      const ethBalance = parseFloat(freshBalance.balance) || 0;
+
+      await this.sendMessage(from, `🏦 *Deposit to Yield Vault* 💰
+
+Current Balance: ${ethBalance.toFixed(6)} ETH
+
+💎 **Yield Opportunities:**
+
+🏛️ **ETH Lending Pool**
+   • Earn 3-5% APY on ETH deposits
+   • Withdraw anytime
+   • Type: "deposit eth"
+
+💵 **USDC Vault**
+   • Stable 4-6% APY
+   • Lower risk option
+   • Type: "deposit usdc"
+
+📈 **Strategy Vaults**
+   • Auto-compounding yields
+   • 8-12% APY potential
+   • Type: "strategy vault"
+
+💡 **Vault Benefits:**
+   • Professional yield farming
+   • Automated strategies
+   • Secure smart contracts
+
+⚠️ **Coming Soon:**
+   Vault integrations with Aave, Compound, and other protocols are being implemented!
+   
+🎯 **Current Options:**
+   • Practice with testnet funds
+   • Learn DeFi concepts safely
+   • "send eth" for peer transfers
+
+🔙 Type "hi" to go back to main menu`);
+      
+    } catch (error) {
+      logger.error('Error handling deposit funds:', error);
       await this.sendMessage(from, `❌ Error: ${error.message}`);
     }
   }

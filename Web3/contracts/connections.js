@@ -7,7 +7,7 @@ const ZAPPO_CONTRACT_ADDRESS = '0x3ec1F818E761ccF530881F5139d48315339e3FA7';
 const RPC_URL = process.env.ARB_SEPOLIA_RPC_URL || 'https://sepolia-rollup.arbitrum.io/rpc';
 
 // Create provider and wallet
-const provider = new ethers.JsonRpcProvider(RPC_URL);
+const provider = new ethers.providers.JsonRpcProvider(RPC_URL);
 const wallet = new ethers.Wallet(PRIVATE_KEY, provider);
 
 // Contract ABIs
@@ -34,17 +34,17 @@ async function deposit(amount) {
         console.log(`Depositing ${amount} USDC...`);
         
         // Convert amount (USDC has 6 decimals)
-        const amountWei = ethers.parseUnits(amount.toString(), 6);
+        const amountWei = ethers.utils.parseUnits(amount.toString(), 6);
         
         // Check balance
         const balance = await usdc.balanceOf(wallet.address);
-        if (balance < amountWei) {
-            throw new Error(`Not enough USDC. You have: ${ethers.formatUnits(balance, 6)}`);
+        if (balance.lt(amountWei)) {
+            throw new Error(`Not enough USDC. You have: ${ethers.utils.formatUnits(balance, 6)}`);
         }
         
         // Approve
         const allowance = await usdc.allowance(wallet.address, ZAPPO_CONTRACT_ADDRESS);
-        if (allowance < amountWei) {
+        if (allowance.lt(amountWei)) {
             console.log("Approving USDC...");
             const approveTx = await usdc.approve(ZAPPO_CONTRACT_ADDRESS, amountWei);
             await approveTx.wait();
@@ -69,11 +69,11 @@ async function withdraw() {
         
         // Check ZAPPO balance
         const balance = await zappo.balanceOf(wallet.address);
-        const balanceFormatted = ethers.formatUnits(balance, 18);
+        const balanceFormatted = ethers.utils.formatUnits(balance, 18);
         
         console.log(`ZAPPO Balance: ${balanceFormatted}`);
         
-        if (balance === 0n) {
+        if (balance.eq(0)) {
             throw new Error(`No ZAPPO tokens to withdraw`);
         }
         
@@ -95,8 +95,8 @@ async function checkBalances() {
         const usdcBalance = await usdc.balanceOf(wallet.address);
         const zappoBalance = await zappo.balanceOf(wallet.address);
         
-        console.log("USDC Balance:", ethers.formatUnits(usdcBalance, 6));
-        console.log("ZAPPO Balance:", ethers.formatUnits(zappoBalance, 18));
+        console.log("USDC Balance:", ethers.utils.formatUnits(usdcBalance, 6));
+        console.log("ZAPPO Balance:", ethers.utils.formatUnits(zappoBalance, 18));
         
     } catch (error) {
         console.log("Balance check failed:", error.message);
