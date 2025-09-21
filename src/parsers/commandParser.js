@@ -35,6 +35,8 @@ class CommandParser {
       // DeFi actions
       SWAP_USDC: /^(swap\s+usdc|swap|exchange\s+usdc|trade\s+usdc)/i,
       DEPOSIT_FUNDS: /^(deposit\s+funds|deposit|vault|earn\s+yield|lending)/i,
+      DEPOSIT_ETH: /^(deposit\s+eth|deposit\s+ethereum)/i,
+      DEPOSIT_USDC: /^(deposit\s+usdc|deposit\s+usd)/i,
       
       // Mainnet status
       MAINNET_STATUS: /^(mainnet|mainnet\s+status|check\s+mainnet|my\s+mainnet)/i,

@@ -13,7 +13,7 @@ const QUOTER_CONTRACT_ADDRESS = '0x2779a0CC1c3e0E44D2542EC3e79e3864Ae93Ef0B' // 
 const SWAP_ROUTER_CONTRACT_ADDRESS = '0x101F443B4d1b059569D643917553c771E1b9663E' // SwapRouter02
 
 // Provider, Contract & Signer Instances
-const provider = new ethers.JsonRpcProvider(process.env.ARB_SEPOLIA_RPC_URL || 'https://sepolia-rollup.arbitrum.io/rpc')
+const provider = new ethers.providers.JsonRpcProvider(process.env.ARB_SEPOLIA_RPC_URL || 'https://sepolia-rollup.arbitrum.io/rpc')
 const factoryContract = new ethers.Contract(POOL_FACTORY_CONTRACT_ADDRESS, FACTORY_ABI, provider);
 const quoterContract = new ethers.Contract(QUOTER_CONTRACT_ADDRESS, QUOTER_ABI, provider)
 const signer = new ethers.Wallet(process.env.PRIVATE_KEY, provider)
@@ -95,7 +95,7 @@ async function quoteAndLogSwap(quoterContract, fee, signer, amountIn) {
         // QuoterV2 returns a struct with amountOut property
         const amountOut = quotedAmountOut.amountOut || quotedAmountOut[0] || quotedAmountOut;
         
-        console.log(`Token Swap will result in: ${ethers.formatUnits(amountOut.toString(), WETH.decimals)} ${WETH.symbol} for ${ethers.formatUnits(amountIn, USDC.decimals)} ${USDC.symbol}`);
+        console.log(`Token Swap will result in: ${ethers.utils.formatUnits(amountOut.toString(), WETH.decimals)} ${WETH.symbol} for ${ethers.utils.formatUnits(amountIn, USDC.decimals)} ${USDC.symbol}`);
         
         if (amountOut.toString() === '0') {
             console.log(`⚠️  WARNING: Quote returned 0. This might indicate:`);
@@ -118,9 +118,9 @@ async function prepareSwapParams(poolContract, signer, amountIn, amountOut) {
     
     console.log(`-------------------------------`);
     console.log(`Swap Parameters:`);
-    console.log(`Amount In: ${ethers.formatUnits(amountIn, USDC.decimals)} ${USDC.symbol}`);
-    console.log(`Expected Out: ${ethers.formatUnits(amountOut, WETH.decimals)} ${WETH.symbol}`);
-    console.log(`Minimum Out (with slippage): ${ethers.formatUnits(amountOutMinimum, WETH.decimals)} ${WETH.symbol}`);
+    console.log(`Amount In: ${ethers.utils.formatUnits(amountIn, USDC.decimals)} ${USDC.symbol}`);
+    console.log(`Expected Out: ${ethers.utils.formatUnits(amountOut, WETH.decimals)} ${WETH.symbol}`);
+    console.log(`Minimum Out (with slippage): ${ethers.utils.formatUnits(amountOutMinimum, WETH.decimals)} ${WETH.symbol}`);
     console.log(`-------------------------------`);
     
     return {

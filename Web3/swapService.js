@@ -65,7 +65,7 @@ async function swapUSDCtoWETH(usdcAmount) {
         const poolAddress = await factoryContract.getPool(USDC.address, WETH.address, 3000);
         console.log(`🏊 Pool found: ${poolAddress}`);
 
-        const quote = await quoterContract.quoteExactInputSingle.staticCall({
+        const quote = await quoterContract.callStatic.quoteExactInputSingle({
             tokenIn: USDC.address,
             tokenOut: WETH.address,
             fee: 3000,
@@ -82,7 +82,7 @@ async function swapUSDCtoWETH(usdcAmount) {
 
         // 4. Execute swap
         const deadline = Math.floor(Date.now() / 1000) + 60 * 10; // 10 minutes
-        const amountOutMinimum = amountOut * BigInt(95) / BigInt(100); // 5% slippage
+        const amountOutMinimum = amountOut.mul(95).div(100); // 5% slippage
 
         const swapParams = {
             tokenIn: USDC.address,
@@ -103,7 +103,7 @@ async function swapUSDCtoWETH(usdcAmount) {
         const receipt = await swapTx.wait();
         
         console.log(`✅ SWAP SUCCESSFUL!`);
-        console.log(`🔗 Transaction: https://sepolia.arbiscan.io/tx/${receipt.hash}`);
+        console.log(`🔗 Transaction: https://sepolia.arbiscan.io/tx/${swapTx.hash}`);
         console.log(`----------------------------------------`);
 
         // 5. Check new balances
@@ -115,10 +115,65 @@ async function swapUSDCtoWETH(usdcAmount) {
         console.log(`💰 USDC: ${ethers.utils.formatUnits(newUSDCBalance, USDC.decimals)}`);
         console.log(`💰 WETH: ${ethers.utils.formatUnits(newWETHBalance, WETH.decimals)}`);
 
+        return {
+            success: true,
+            transactionHash: swapTx.hash,
+            amountIn: usdcAmount,
+            amountOut: ethers.utils.formatUnits(amountOut, WETH.decimals),
+            newUSDCBalance: ethers.utils.formatUnits(newUSDCBalance, USDC.decimals),
+            newWETHBalance: ethers.utils.formatUnits(newWETHBalance, WETH.decimals)
+        };
+
     } catch (error) {
-        console.error(`❌ Error:`, error.message);
+        console.error(`❌ Swap Error:`, error.message);
+        return {
+            success: false,
+            error: error.message
+        };
     }
 }
 
-// Run with 1 USDC
-swapUSDCtoWETH(1).catch(console.error);
+async function getSwapQuote(usdcAmount) {
+    try {
+        const amountIn = ethers.utils.parseUnits(usdcAmount.toString(), USDC.decimals);
+        
+        // Check balance first
+        const usdcContract = new ethers.Contract(USDC.address, ERC20_ABI, provider);
+        const balance = await usdcContract.balanceOf(signer.address);
+        
+        if (balance < amountIn) {
+            throw new Error(`Insufficient USDC balance`);
+        }
+
+        // Get quote
+        const quote = await quoterContract.callStatic.quoteExactInputSingle({
+            tokenIn: USDC.address,
+            tokenOut: WETH.address,
+            fee: 3000,
+            amountIn: amountIn,
+            sqrtPriceLimitX96: 0
+        });
+
+        const amountOut = quote.amountOut || quote[0] || quote;
+        
+        return {
+            success: true,
+            amountIn: usdcAmount,
+            amountOut: ethers.utils.formatUnits(amountOut, WETH.decimals),
+            currentUSDCBalance: ethers.utils.formatUnits(balance, USDC.decimals)
+        };
+
+    } catch (error) {
+        return {
+            success: false,
+            error: error.message
+        };
+    }
+}
+
+module.exports = {
+    swapUSDCtoWETH,
+    getSwapQuote,
+    USDC,
+    WETH
+};

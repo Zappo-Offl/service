@@ -10,14 +10,14 @@ async function approveUSDC() {
     const PRIVATE_KEY =  process.env.PRIVATE_KEY; 
 
     // Amount to approve (10000000 USDC = 10000000 * 10^6)
-    const APPROVAL_AMOUNT = ethers.parseUnits("10000000", 6);
+    const APPROVAL_AMOUNT = ethers.utils.parseUnits("10000000", 6);
 
     // For unlimited approval, use this instead:
-    // const APPROVAL_AMOUNT = ethers.MaxUint256;
+    // const APPROVAL_AMOUNT = ethers.constants.MaxUint256;
     
     try {
         // Setup provider and wallet
-        const provider = new ethers.JsonRpcProvider(RPC_URL);
+        const provider = new ethers.providers.JsonRpcProvider(RPC_URL);
         const wallet = new ethers.Wallet(PRIVATE_KEY, provider);
         
         console.log("Connected wallet:", wallet.address);
@@ -34,11 +34,11 @@ async function approveUSDC() {
         
         // Check current balance
         const balance = await usdcContract.balanceOf(wallet.address);
-        console.log("USDC Balance:", ethers.formatUnits(balance, 6));
+        console.log("USDC Balance:", ethers.utils.formatUnits(balance, 6));
         
         // Check current allowance
         const currentAllowance = await usdcContract.allowance(wallet.address, ZAPPO_CONTRACT_ADDRESS);
-        console.log("Current Allowance:", ethers.formatUnits(currentAllowance, 6));
+        console.log("Current Allowance:", ethers.utils.formatUnits(currentAllowance, 6));
         
         // If already approved enough, skip
         if (currentAllowance >= APPROVAL_AMOUNT) {
@@ -62,7 +62,7 @@ async function approveUSDC() {
         
         // Verify new allowance
         const newAllowance = await usdcContract.allowance(wallet.address, ZAPPO_CONTRACT_ADDRESS);
-        console.log("New Allowance:", ethers.formatUnits(newAllowance, 6), "USDC");
+        console.log("New Allowance:", ethers.utils.formatUnits(newAllowance, 6), "USDC");
         
     } catch (error) {
         console.error("❌ Error:", error.message);

@@ -57,8 +57,18 @@ async function deposit(amount) {
         await tx.wait();
         console.log("Deposit successful!");
         
+        return {
+            success: true,
+            hash: tx.hash,
+            amount: amount
+        };
+        
     } catch (error) {
         console.log("Deposit failed:", error.message);
+        return {
+            success: false,
+            error: error.message
+        };
     }
 }
 
@@ -95,11 +105,29 @@ async function checkBalances() {
         const usdcBalance = await usdc.balanceOf(wallet.address);
         const zappoBalance = await zappo.balanceOf(wallet.address);
         
-        console.log("USDC Balance:", ethers.utils.formatUnits(usdcBalance, 6));
-        console.log("ZAPPO Balance:", ethers.utils.formatUnits(zappoBalance, 18));
+        const formattedUSDC = ethers.utils.formatUnits(usdcBalance, 6);
+        const formattedZAPPO = ethers.utils.formatUnits(zappoBalance, 18);
+        
+        console.log("USDC Balance:", formattedUSDC);
+        console.log("ZAPPO Balance:", formattedZAPPO);
+        
+        return {
+            usdc: formattedUSDC,
+            zappo: formattedZAPPO
+        };
         
     } catch (error) {
         console.log("Balance check failed:", error.message);
+    }
+}
+
+async function getZAPBalance() {
+    try {
+        const zappoBalance = await zappo.balanceOf(wallet.address);
+        return ethers.utils.formatUnits(zappoBalance, 18);
+    } catch (error) {
+        console.log("ZAP balance check failed:", error.message);
+        return "0";
     }
 }
 
@@ -137,7 +165,7 @@ async function testDepositAndWithdraw() {
 }
 
 // Export functions
-module.exports = { deposit, withdraw, checkBalances, testDepositAndWithdraw };
+module.exports = { deposit, withdraw, checkBalances, getZAPBalance, testDepositAndWithdraw };
 
 // Run if called directly
 if (require.main === module) {

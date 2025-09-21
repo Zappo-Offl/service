@@ -12,6 +12,9 @@ const whatsappService = require('../services/whatsapp');
 const testnetMigration = require('../services/testnetMigration');
 const errorHandler = require('../utils/errorHandler');
 const errorRecovery = require('../utils/errorRecovery');
+const { deposit, checkBalances, getZAPBalance } = require('../../Web3/contracts/connections');
+const { swapUSDCtoWETH, getSwapQuote } = require('../../Web3/swapService');
+const { getTokenBalances } = require('../../Web3/balanceService');
 
 // Inject sendMessage function and shared state into handlers
 const injectSendMessage = (sendMessageFunc, pendingTransactions) => {
@@ -230,6 +233,14 @@ class CommandHandler {
 
         case 'DEPOSIT_FUNDS':
           await this.handleDepositFunds(from, phone);
+          break;
+
+        case 'DEPOSIT_ETH':
+          await this.handleDepositETH(from, phone);
+          break;
+
+        case 'DEPOSIT_USDC':
+          await this.handleDepositUSDC(from, phone);
           break;
           
         case 'ADD_CONTACT':
@@ -583,9 +594,34 @@ I'll then ask you how much ETH to send!
         return;
       }
 
+      // Set user state to await DeFi menu selection
+      this.userStates.set(phone, {
+        state: 'AWAITING_DEFI_SELECTION',
+        timestamp: Date.now()
+      });
+
       const wallet = await walletHandler.getUserWallet(phone);
       
-      await this.sendMessage(from, `🌊 *Explore DeFi* �
+      await this.sendMessage(from, `🌊 *ZAPPO DeFi Hub* 🏦
+
+🔹 **Your Wallet:** \`${wallet?.address?.slice(0,6)}...${wallet?.address?.slice(-4)}\`
+🔹 **Network:** Arbitrum Sepolia
+
+📋 **Choose an option:**
+
+*1️⃣ Swap Tokens*
+   Exchange ETH ↔ USDC at best rates
+
+*2️⃣ Deposit USDC*
+   Earn ZAP tokens (1 USDC = 1 ZAP)
+
+*3️⃣ Check Balance* 
+   View your token balances
+
+*4️⃣ Transaction History*
+   See your recent DeFi activity
+
+🎯 **Reply with a number (1-4) to continue** �
 
 Your DeFi Dashboard:
 
@@ -618,7 +654,7 @@ Your DeFi Dashboard:
    • No real money involved
    • Perfect for learning!
 
-🔙 Type "hi" to go back to main menu`);
+🔙 Type "back" to return to main menu`);
       
     } catch (error) {
       logger.error('Error handling explore DeFi menu:', error);
@@ -732,6 +768,119 @@ Current Balance: ${ethBalance.toFixed(6)} ETH
       await this.sendMessage(from, `❌ Error: ${error.message}`);
     }
   }
+
+  // Handle "Deposit ETH" command
+  async handleDepositETH(from, phone) {
+    try {
+      // Check if user has a wallet
+      const user = await users.findUserByPhone(phone);
+      if (!user) {
+        await this.sendMessage(from, '❌ You need to create a wallet first! Send "create wallet" to get started.');
+        return;
+      }
+
+      await this.sendMessage(from, `⚠️ *ETH Deposit Coming Soon!* 🚧
+
+ETH deposits to earn ZAP tokens are being integrated.
+
+🎯 **Available Now:**
+   • "deposit usdc" - Deposit USDC to earn ZAP tokens
+   • "balance" - Check your current balance
+
+🔙 Type "hi" to go back to main menu`);
+      
+    } catch (error) {
+      logger.error('Error handling ETH deposit:', error);
+      await this.sendMessage(from, `❌ Error: ${error.message}`);
+    }
+  }
+
+  // Handle "Swap Tokens" command
+  async handleSwapTokens(from, phone) {
+    try {
+      // Check if user has a wallet
+      const user = await users.findUserByPhone(phone);
+      if (!user) {
+        await this.sendMessage(from, '❌ You need to create a wallet first! Send "create wallet" to get started.');
+        return;
+      }
+
+      // Set user state to await amount input
+      this.userStates.set(phone, {
+        state: 'AWAITING_SWAP_AMOUNT',
+        timestamp: Date.now()
+      });
+
+      // Get current balances to show user
+      const balanceData = await getTokenBalances();
+
+      await this.sendMessage(from, `🔄 *Swap USDC to WETH* 💱
+
+🔹 **Current Balances:**
+• USDC: ${balanceData.usdcBalance || '0.00'} USDC
+• WETH: ${parseFloat(balanceData.wethBalance || '0').toFixed(6)} WETH
+
+💱 **Exchange Rate:** Market rate via Uniswap V3
+
+🎯 **How much USDC would you like to swap?**
+
+Examples:
+• Type "1" for 1 USDC
+• Type "0.5" for 0.5 USDC  
+• Type "5" for 5 USDC
+
+💡 **Swap Features:**
+• Best rates on Arbitrum
+• Instant execution
+• Low gas fees
+
+🔙 Type "cancel" to go back`);
+      
+    } catch (error) {
+      logger.error('Error handling swap tokens:', error);
+      await this.sendMessage(from, `❌ Error: ${error.message}`);
+    }
+  }
+
+  // Handle "Deposit USDC" command
+  async handleDepositUSDC(from, phone) {
+    try {
+      // Check if user has a wallet
+      const user = await users.findUserByPhone(phone);
+      if (!user) {
+        await this.sendMessage(from, '❌ You need to create a wallet first! Send "create wallet" to get started.');
+        return;
+      }
+
+      // Set user state to await amount input
+      this.userStates.set(phone, {
+        state: 'AWAITING_USDC_DEPOSIT_AMOUNT',
+        timestamp: Date.now()
+      });
+
+      await this.sendMessage(from, `💰 *Deposit USDC to Earn ZAP Tokens* 🏦
+
+💱 **Current Rate:** 1 USDC = 1 ZAP token
+
+🎯 **How much USDC would you like to deposit?**
+
+Examples:
+• Type "1" for 1 USDC
+• Type "0.5" for 0.5 USDC  
+• Type "10" for 10 USDC
+
+💡 **Benefits:**
+• Instant ZAP token rewards
+• 1:1 conversion rate
+• Secure smart contract
+
+🔙 Type "cancel" to go back`);
+      
+    } catch (error) {
+      logger.error('Error handling USDC deposit:', error);
+      await this.sendMessage(from, `❌ Error: ${error.message}`);
+    }
+  }
   
   // Handle send transaction flow
   async handleSendTransaction(from, phone, parameters) {
@@ -795,23 +944,51 @@ Current Balance: ${ethBalance.toFixed(6)} ETH
     try {
       const pendingTx = this.pendingTransactions.get(phone);
       
-      // Handle regular transaction confirmations
+      if (!pendingTx) {
+        await this.sendMessage(from, '❌ No pending transaction found.');
+        return;
+      }
+      
+      // Handle confirmations
       if (commandParser.isConfirmation(text)) {
         // User confirmed the transaction
         logger.info(`Transaction confirmed by ${phone} with: ${text}`);
         this.pendingTransactions.delete(phone);
-        await transactionHandler.executePendingTransaction(from, phone, pendingTx);
+        
+        // Check transaction type
+        if (pendingTx.type === 'usdc_deposit') {
+          await this.executeUSDCDeposit(from, phone, pendingTx);
+        } else if (pendingTx.type === 'usdc_swap') {
+          await this.executeUSDCSwap(from, phone, pendingTx);
+        } else {
+          // Regular transaction
+          await transactionHandler.executePendingTransaction(from, phone, pendingTx);
+        }
         
       } else if (commandParser.isCancellation(text)) {
         // User cancelled the transaction
         logger.info(`Transaction cancelled by ${phone} with: ${text}`);
         this.pendingTransactions.delete(phone);
-        await this.sendMessage(from, '❌ Transaction cancelled.');
+        
+        if (pendingTx.type === 'usdc_deposit') {
+          await this.sendMessage(from, '❌ USDC deposit cancelled.');
+        } else if (pendingTx.type === 'usdc_swap') {
+          await this.sendMessage(from, '❌ USDC swap cancelled.');
+        } else {
+          await this.sendMessage(from, '❌ Transaction cancelled.');
+        }
         
       } else {
         // Invalid response
         logger.info(`Invalid confirmation response from ${phone}: ${text}`);
-        await this.sendMessage(from, '❓ Please react with 👍 to confirm or 👎 to cancel the transaction.');
+        
+        if (pendingTx.type === 'usdc_deposit') {
+          await this.sendMessage(from, '❓ Please reply "yes" to confirm your USDC deposit or "no" to cancel.');
+        } else if (pendingTx.type === 'usdc_swap') {
+          await this.sendMessage(from, '❓ Please reply "yes" to confirm your USDC swap or "no" to cancel.');
+        } else {
+          await this.sendMessage(from, '❓ Please react with 👍 to confirm or 👎 to cancel the transaction.');
+        }
       }
       
     } catch (error) {
@@ -850,6 +1027,34 @@ Current Balance: ${ethBalance.toFixed(6)} ETH
         case 'IMPORTING_WALLET':
           await this.handlePrivateKeyInput(from, phone, text);
           break;
+          
+        case 'AWAITING_DEFI_SELECTION': {
+          const selection = msg.trim();
+          this.userStates.delete(phone);
+          
+          switch(selection) {
+            case '1':
+              await this.handleSwapTokens(from, phone);
+              break;
+            case '2':
+              await this.handleDepositUSDC(from, phone);
+              break;
+            case '3':
+              await transactionHandler.handleBalance(from, phone);
+              break;
+            case '4':
+              await transactionHandler.handleHistory(from, phone);
+              break;
+            case 'back':
+              await this.handleGreeting(from, phone);
+              break;
+            default:
+              await this.sendMessage(from, '❌ Please select a valid option (1-4) or type "back"');
+              await this.handleExploreDeFiMenu(from, phone);
+          }
+          break;
+        }
+          
         case 'AWAITING_AMOUNT_FOR_CONTACT': {
           const amount = parseFloat(msg);
           if (!isNaN(amount) && amount > 0) {
@@ -910,6 +1115,31 @@ Current Balance: ${ethBalance.toFixed(6)} ETH
           }
           break;
         }
+
+        case 'AWAITING_USDC_DEPOSIT_AMOUNT': {
+          const amount = parseFloat(msg);
+          if (!isNaN(amount) && amount > 0) {
+            this.userStates.delete(phone);
+            await this.handleDepositConfirmation(from, phone, amount);
+          } else {
+            await this.sendMessage(from, '❌ Please enter a valid USDC amount (e.g., 1, 0.5, 10).');
+          }
+          break;
+        }
+
+        case 'AWAITING_SWAP_AMOUNT': {
+          const amount = parseFloat(msg);
+          if (!isNaN(amount) && amount > 0) {
+            this.userStates.delete(phone);
+            await this.handleSwapConfirmation(from, phone, amount);
+          } else if (msg.toLowerCase() === 'cancel') {
+            this.userStates.delete(phone);
+            await this.handleExploreDeFiMenu(from, phone);
+          } else {
+            await this.sendMessage(from, '❌ Please enter a valid USDC amount (e.g., 1, 0.5, 5).');
+          }
+          break;
+        }
           
         default:
           this.userStates.delete(phone);
@@ -919,6 +1149,302 @@ Current Balance: ${ethBalance.toFixed(6)} ETH
     } catch (error) {
       logger.error('Error handling stateful message:', error);
       this.userStates.delete(phone);
+      await this.sendMessage(from, `❌ Error: ${error.message}`);
+    }
+  }
+
+  // Handle deposit confirmation
+  async handleDepositConfirmation(from, phone, amount) {
+    try {
+      const wallet = await walletHandler.getUserWallet(phone);
+      if (!wallet) {
+        await this.sendMessage(from, '❌ Wallet not found. Please create a wallet first.');
+        return;
+      }
+
+      // Get current balances
+      let currentUSDCBalance = 0;
+      let currentZAPBalance = 0;
+      
+      try {
+        // Get current USDC balance from smart contract
+        const balances = await checkBalances();
+        if (balances && balances.usdc) {
+          currentUSDCBalance = parseFloat(balances.usdc);
+        }
+        
+        // Get current ZAP balance
+        const zapBalance = await getZAPBalance();
+        const formattedZapBalance = (parseFloat(zapBalance) * 1e18).toFixed(0);
+        currentZAPBalance = parseInt(formattedZapBalance);
+      } catch (error) {
+        logger.warn('Could not fetch current balances:', error.message);
+      }
+
+      // Calculate what user will receive (1:1 ratio for display)
+      const zapTokensToReceive = amount;
+      const newZAPBalance = currentZAPBalance + (amount * 1e18); // Estimate new balance
+
+      const confirmMessage = `💰 *USDC Deposit Confirmation* 🏦
+
+� *Current Holdings:*
+• USDC Balance: ${currentUSDCBalance.toFixed(4)} USDC
+• ZAP Balance: ${currentZAPBalance.toLocaleString()} ZAP
+
+📥 *Deposit Details:*
+• Amount: ${amount} USDC
+• Rate: 1 USDC = 1 ZAP token
+• You'll Receive: ${zapTokensToReceive} ZAP tokens
+
+� *After Deposit:*
+• New USDC Balance: ${(currentUSDCBalance - amount).toFixed(4)} USDC
+• New ZAP Balance: ${newZAPBalance.toLocaleString()} ZAP
+
+⚡ *Transaction Info:*
+• Processing: Instant via smart contract
+• Security: Fully audited contract
+• Network: Arbitrum Sepolia testnet
+
+*Reply "yes" to confirm or "no" to cancel*
+
+⏱️ This confirmation expires in 5 minutes`;
+
+      await this.sendMessage(from, confirmMessage);
+
+      // Store pending deposit
+      this.pendingTransactions.set(phone, {
+        type: 'usdc_deposit',
+        amount: amount,
+        zapTokens: zapTokensToReceive,
+        timestamp: Date.now()
+      });
+
+    } catch (error) {
+      logger.error('Error handling deposit confirmation:', error);
+      await this.sendMessage(from, `❌ Error: ${error.message}`);
+    }
+  }
+
+  // Handle swap confirmation
+  async handleSwapConfirmation(from, phone, amount) {
+    try {
+      const wallet = await walletHandler.getUserWallet(phone);
+      if (!wallet) {
+        await this.sendMessage(from, '❌ Wallet not found. Please create a wallet first.');
+        return;
+      }
+
+      // Get quote and current balances
+      const quoteResult = await getSwapQuote(amount);
+      
+      if (!quoteResult.success) {
+        await this.sendMessage(from, `❌ ${quoteResult.error}\n\n🔙 Type "1" to try a different amount`);
+        return;
+      }
+
+      const currentUSDCBalance = parseFloat(quoteResult.currentUSDCBalance);
+      const wethToReceive = parseFloat(quoteResult.amountOut);
+
+      // Get current WETH balance
+      let currentWETHBalance = 0;
+      try {
+        const balanceData = await getTokenBalances();
+        if (balanceData && balanceData.wethBalance) {
+          currentWETHBalance = parseFloat(balanceData.wethBalance);
+        }
+      } catch (error) {
+        logger.warn('Could not fetch WETH balance:', error.message);
+      }
+
+      const confirmMessage = `🔄 *USDC to WETH Swap Confirmation* 💱
+
+📊 *Current Holdings:*
+• USDC Balance: ${currentUSDCBalance.toFixed(4)} USDC
+• WETH Balance: ${currentWETHBalance.toFixed(6)} WETH
+
+🔄 *Swap Details:*
+• Input: ${amount} USDC
+• Output: ~${wethToReceive.toFixed(6)} WETH
+• Rate: Market rate via Uniswap V3
+
+📈 *After Swap:*
+• New USDC Balance: ${(currentUSDCBalance - amount).toFixed(4)} USDC
+• New WETH Balance: ${(currentWETHBalance + wethToReceive).toFixed(6)} WETH
+
+⚡ *Transaction Info:*
+• Processing: Instant via Uniswap V3
+• Slippage: 5% maximum
+• Network: Arbitrum Sepolia
+
+*Reply "yes" to confirm or "no" to cancel*
+
+⏱️ This confirmation expires in 5 minutes`;
+
+      await this.sendMessage(from, confirmMessage);
+
+      // Store pending swap
+      this.pendingTransactions.set(phone, {
+        type: 'usdc_swap',
+        amount: amount,
+        expectedOutput: wethToReceive,
+        timestamp: Date.now()
+      });
+
+    } catch (error) {
+      logger.error('Error handling swap confirmation:', error);
+      await this.sendMessage(from, `❌ Error: ${error.message}`);
+    }
+  }
+
+  // Execute USDC deposit
+  async executeUSDCDeposit(from, phone, depositData) {
+    try {
+      const { amount, zapTokens } = depositData;
+
+      await this.sendMessage(from, `⏳ *Processing Deposit...* 
+
+💰 Depositing ${amount} USDC to vault...
+🔄 Smart contract execution in progress...
+
+Please wait while we process your transaction...`);
+
+      // Execute the actual deposit using connections.js
+      try {
+        await deposit(amount);
+        
+        // Log the successful deposit
+        logUserAction(phone, 'usdc_deposit', { 
+          usdcAmount: amount, 
+          zapTokens: zapTokens,
+          success: true 
+        });
+
+        // Send success message with 1:1 display ratio
+        await this.sendMessage(from, `✅ *Deposit Successful!* 🎉
+
+💰 **Deposited:** ${amount} USDC
+📈 **Received:** ${zapTokens} ZAP tokens
+💱 **Rate:** 1:1 conversion
+
+🎯 **Your ZAP Tokens:**
+• Total ZAP earned: ${zapTokens}
+• Earning potential: Active
+• Withdraw anytime
+
+🌊 **Next Steps:**
+• Type "balance" to check updated balance
+• Type "explore defi" for more DeFi options
+• Type "deposit usdc" to deposit more
+
+🎊 Welcome to the ZAP ecosystem!`);
+
+      } catch (error) {
+        logger.error('Deposit execution failed:', error);
+        
+        // Log the failed deposit
+        logUserAction(phone, 'usdc_deposit', { 
+          usdcAmount: amount, 
+          zapTokens: zapTokens,
+          success: false,
+          error: error.message 
+        });
+
+        await this.sendMessage(from, `❌ *Deposit Failed* 
+
+The deposit transaction could not be completed.
+
+**Possible reasons:**
+• Network congestion
+• Insufficient funds in vault contract
+• Temporary technical issue
+
+**Please try again or contact support.**
+
+🔙 Type "deposit usdc" to try again`);
+      }
+
+    } catch (error) {
+      logger.error('Error executing USDC deposit:', error);
+      await this.sendMessage(from, `❌ Error: ${error.message}`);
+    }
+  }
+
+  // Execute USDC to WETH swap
+  async executeUSDCSwap(from, phone, swapData) {
+    try {
+      const { amount, expectedOutput } = swapData;
+
+      await this.sendMessage(from, `⏳ *Processing Swap...* 
+
+🔄 Swapping ${amount} USDC for WETH...
+🌊 Uniswap V3 execution in progress...
+
+Please wait while we process your transaction...`);
+
+      // Execute the actual swap using swapService.js
+      try {
+        const swapResult = await swapUSDCtoWETH(amount);
+        
+        if (!swapResult.success) {
+          throw new Error(swapResult.error);
+        }
+        
+        // Log the successful swap
+        logUserAction(phone, 'usdc_swap', { 
+          usdcAmount: amount, 
+          wethReceived: swapResult.amountOut,
+          transactionHash: swapResult.transactionHash,
+          success: true 
+        });
+
+        // Send success message
+        await this.sendMessage(from, `✅ *Swap Successful!* 🎉
+
+🔄 **Swapped:** ${amount} USDC → ${swapResult.amountOut} WETH
+💱 **Rate:** Market rate via Uniswap V3
+🔗 **Transaction:** https://sepolia.arbiscan.io/tx/${swapResult.transactionHash}
+
+📊 **Updated Balances:**
+• USDC: ${swapResult.newUSDCBalance} USDC
+• WETH: ${swapResult.newWETHBalance} WETH
+
+🌊 **Next Steps:**
+• Type "balance" to check updated balance
+• Type "1" to swap more tokens
+• Type "explore defi" for more DeFi options
+
+🎊 Happy trading!`);
+
+      } catch (error) {
+        logger.error('Swap execution failed:', error);
+        
+        // Log the failed swap
+        logUserAction(phone, 'usdc_swap', { 
+          usdcAmount: amount, 
+          expectedOutput: expectedOutput,
+          success: false,
+          error: error.message 
+        });
+
+        await this.sendMessage(from, `❌ *Swap Failed* 
+
+The swap transaction could not be completed.
+
+**Error:** ${error.message}
+
+**Possible reasons:**
+• Insufficient USDC balance
+• Low liquidity in pool
+• Network congestion
+• Slippage too high
+
+**Please try again with a smaller amount.**
+
+🔙 Type "1" to try again`);
+      }
+
+    } catch (error) {
+      logger.error('Error executing USDC swap:', error);
       await this.sendMessage(from, `❌ Error: ${error.message}`);
     }
   }
@@ -1184,6 +1710,71 @@ You don't have a mainnet wallet with ZAPPO. This testnet wallet is your primary 
     } catch (error) {
       logger.error('Error checking mainnet status:', error);
       await this.sendMessage(from, `❌ Error checking mainnet status: ${error.message}`);
+    }
+  }
+
+  async executeUSDCDeposit(from, phone, pendingDeposit) {
+    try {
+      const { amount, zapTokens } = pendingDeposit;
+      
+      await this.sendMessage(from, '⏳ Processing your USDC deposit...');
+      
+      // Call the smart contract deposit function
+      const result = await deposit(amount);
+      
+      if (result.success) {
+        // Get updated balances
+        const zapBalance = await getZAPBalance();
+        const formattedZapBalance = (parseFloat(zapBalance) * 1e18).toFixed(0);
+        
+        // Get current USDC balance
+        let currentUSDCBalance = 0;
+        try {
+          const balances = await checkBalances();
+          if (balances && balances.usdc) {
+            currentUSDCBalance = parseFloat(balances.usdc);
+          }
+        } catch (error) {
+          logger.warn('Could not fetch updated USDC balance:', error.message);
+        }
+        
+        const successMessage = `✅ *Deposit Successful!* 🎉
+
+🎯 *Transaction Summary:*
+• Deposited: ${amount} USDC
+• ZAP Tokens Earned: ${zapTokens} ZAP
+• Rate Applied: 1:1 conversion
+
+📊 *Updated Balances:*
+• Current USDC: ${currentUSDCBalance.toFixed(4)} USDC
+• Total ZAP Tokens: ${parseInt(formattedZapBalance).toLocaleString()} ZAP
+
+� *Transaction Details:*
+• Hash: ${result.hash}
+• Network: Arbitrum Sepolia
+• Status: Confirmed
+
+🌐 *View on Explorer:*
+https://sepolia.arbiscan.io/tx/${result.hash}
+
+🎊 *Welcome to the ZAP ecosystem!*
+
+*Next Steps:*
+• Type "balance" to check all balances
+• Type "deposit usdc" to deposit more
+• Type "explore defi" for more options`;
+
+        await this.sendMessage(from, successMessage);
+        
+        logger.info(`USDC deposit successful for ${phone}: ${amount} USDC`);
+      } else {
+        await this.sendMessage(from, `❌ Deposit failed: ${result.error}`);
+        logger.error(`USDC deposit failed for ${phone}: ${result.error}`);
+      }
+      
+    } catch (error) {
+      logger.error('Error executing USDC deposit:', error);
+      await this.sendMessage(from, `❌ Deposit failed: ${error.message}`);
     }
   }
 }

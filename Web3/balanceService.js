@@ -24,32 +24,43 @@ const ERC20_ABI = [
     "function decimals() view returns (uint8)"
 ];
 
-async function checkBalances() {
+async function getTokenBalances() {
     try {
         const address = await signer.getAddress();
-        console.log('📊 Checking balances for address:', address);
-        console.log('----------------------------------------');
 
         // Check ETH balance (for gas)
         const ethBalance = await provider.getBalance(address);
-        console.log(`ETH Balance: ${ethers.utils.formatEther(ethBalance)} ETH`);
 
         // Check USDC balance
         const usdcContract = new ethers.Contract(USDC.address, ERC20_ABI, provider);
         const usdcBalance = await usdcContract.balanceOf(address);
-        console.log(`USDC Balance: ${ethers.utils.formatUnits(usdcBalance, USDC.decimals)} ${USDC.symbol}`);
 
         // Check WETH balance
         const wethContract = new ethers.Contract(WETH.address, ERC20_ABI, provider);
         const wethBalance = await wethContract.balanceOf(address);
-        console.log(`WETH Balance: ${ethers.utils.formatUnits(wethBalance, WETH.decimals)} ${WETH.symbol}`);
 
-        console.log('----------------------------------------');
+        return {
+            success: true,
+            address: address,
+            ethBalance: ethers.utils.formatEther(ethBalance),
+            usdcBalance: ethers.utils.formatUnits(usdcBalance, USDC.decimals),
+            wethBalance: ethers.utils.formatUnits(wethBalance, WETH.decimals)
+        };
 
     } catch (error) {
         console.error('Error checking balances:', error.message);
+        return {
+            success: false,
+            error: error.message,
+            ethBalance: '0.00',
+            usdcBalance: '0.00',
+            wethBalance: '0.00'
+        };
     }
 }
 
-// Run the function
-checkBalances().catch(console.error);
+module.exports = {
+    getTokenBalances,
+    USDC,
+    WETH
+};
