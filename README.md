@@ -1,307 +1,272 @@
-# 🤖 ZAPPO - WhatsApp ETH Wallet Bot
+# 🚀 Zappo: WhatsApp-Native DeFi Superapp
 
-> **Send, receive, and manage ETH directly in WhatsApp** - No browser, no extensions, no complexity!
+<div align="center">
+  <img src="https://img.shields.io/badge/Status-Testnet%20Live-green?style=for-the-badge" alt="Testnet Live">
+  <img src="https://img.shields.io/badge/Network-Arbitrum%20Sepolia-blue?style=for-the-badge" alt="Arbitrum">
+  <img src="https://img.shields.io/badge/AI-Powered-purple?style=for-the-badge" alt="AI Powered">
+</div>
 
-[![Node.js](https://img.shields.io/badge/Node.js-18+-green.svg)](https://nodejs.org/)
-[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![WhatsApp](https://img.shields.io/badge/WhatsApp-Bot-green.svg)](https://whatsapp.com/)
+**DeFi as simple as messaging a friend.**
 
-## 🎯 What is ZAPPO?
-
-ZAPPO is a **WhatsApp-native crypto wallet** that allows users to create wallets, view balances, send/receive ETH, and track transactions — entirely inside WhatsApp chat, without any browser, extension, or seed phrase complexity.
-
-### 🌟 Key Features
-
-- **📱 WhatsApp Native** - Works entirely within WhatsApp
-- **🔐 Secure Wallet Creation** - Powered by Privy for phone-linked wallets
-- **💸 Send/Receive ETH** - Direct transactions on Arbitrum
-- **📊 Real-time Balance** - Check your ETH balance instantly
-- **📋 Transaction History** - View recent transactions with explorer links
-- **👥 Contact Management** - Save addresses as contacts for easy sending
-- **🔔 Instant Notifications** - Get notified of incoming transactions
-- **🛡️ Encrypted Storage** - Private keys stored securely
-- **🌐 Natural Language** - Use commands or natural language
-
-## 🚀 Quick Start
-
-### Prerequisites
-
-- Node.js 18+ 
-- MongoDB (local or cloud)
-- WhatsApp account for the bot
-- Privy account (for wallet infrastructure)
-- Thirdweb account (for blockchain operations)
-
-### 1. Clone & Install
-
-```bash
-git clone <repository-url>
-cd zappo
-npm install
-```
-
-### 2. Setup Configuration
-
-```bash
-npm run setup
-```
-
-This interactive setup will help you configure:
-- MongoDB connection
-- Privy credentials
-- Thirdweb credentials
-- Security keys
-
-### 3. Start the Bot
-
-```bash
-npm start
-```
-
-### 4. Connect WhatsApp
-
-1. Scan the QR code with your WhatsApp
-2. The bot will connect and be ready to use
-3. Send `/help` to see all available commands
-
-## 📱 Usage Guide
-
-### Basic Commands
-
-| Command | Description | Example |
-|---------|-------------|---------|
-| `/help` | Show all commands | `/help` |
-| `create wallet` | Create new wallet | `create wallet` |
-| `import wallet` | Import existing wallet | `import wallet` |
-| `/balance` | Check ETH balance | `/balance` |
-| `/history` | View transactions | `/history` |
-| `/backup` | Export private key | `/backup` |
-
-### Sending ETH
-
-**Command Format:**
-```
-/send amount ETH to recipient
-```
-
-**Examples:**
-```
-/send 1 ETH to 0x1234...
-send 0.5 ETH to John
-transfer 2 to 0xabcd...
-```
-
-### Contact Management
-
-**Add Contact:**
-```
-/addcontact John 0x1234...
-```
-
-**Send to Contact:**
-```
-send 1 ETH to John
-```
-
-### Natural Language
-
-ZAPPO understands natural language:
-- "What's my balance?"
-- "Show me my transaction history"
-- "Send 1 ETH to 0x..."
-- "Transfer 0.5 to John"
-
-## 🏗️ Architecture
-
-### Tech Stack
-
-- **WhatsApp Integration**: [Baileys.js](https://github.com/WhiskeySockets/Baileys)
-- **Wallet Infrastructure**: [Privy](https://privy.io/)
-- **Blockchain Operations**: [Thirdweb/Nebula](https://portal.thirdweb.com/)
-- **Database**: MongoDB
-- **Backend**: Node.js
-- **Chain**: Arbitrum Mainnet
-
-### Project Structure
+Zappo brings decentralized finance into the world's most familiar interface: WhatsApp. No wallets, no seed phrases, no dApps—just chat.
 
 ```
-zappo/
-├── src/
-│   ├── config/          # Configuration management
-│   ├── services/        # Core services (WhatsApp, Privy, Nebula)
-│   ├── handlers/        # Command handlers
-│   ├── parsers/         # Command parsing and NLP
-│   └── utils/           # Utilities and logging
-├── logs/                # Application logs
-├── auth/                # WhatsApp session data
-├── package.json
-├── README.md   
-└── env.example
+User: Invest ₹1000
+Zappo: ✅ Deposited into yield vault. Current APY: 4.5%
 ```
-
-## 🔧 Configuration
-
-### Environment Variables
-
-Create a `.env` file with:
-
-```env
-# Database
-MONGODB_URI=mongodb://localhost:27017/zappo
-
-# Privy (Wallet Infrastructure)
-PRIVY_APP_ID=your_privy_app_id
-PRIVY_APP_SECRET=your_privy_app_secret
-
-# Thirdweb (Blockchain Operations)
-THIRDWEB_CLIENT_ID=your_thirdweb_client_id
-THIRDWEB_CLIENT_SECRET=your_thirdweb_client_secret
-
-# Security
-ENCRYPTION_KEY=your_32_char_encryption_key
-JWT_SECRET=your_jwt_secret
-
-# Logging
-LOG_LEVEL=info
-NODE_ENV=development
-```
-
-### Getting API Keys
-
-1. **Privy**: Sign up at [console.privy.io](https://console.privy.io/)
-2. **Thirdweb**: Sign up at [portal.thirdweb.com](https://portal.thirdweb.com/)
-3. **MongoDB**: Use local MongoDB or [MongoDB Atlas](https://mongodb.com/atlas)
-
-## 🔐 Security Features
-
-- **Encrypted Storage**: Private keys encrypted with AES-256
-- **Phone Verification**: Wallets linked to phone numbers
-- **Session Management**: Secure WhatsApp session handling
-- **Input Validation**: Comprehensive validation for all inputs
-- **Error Handling**: Graceful error handling and logging
-
-## 📊 Database Schema
-
-### Users Collection
-```json
-{
-  "phone": "+1234567890",
-  "wallet_address": "0x...",
-  "privy_user_id": "privy_123",
-  "private_key": "encrypted_key",
-  "created_at": "timestamp"
-}
-```
-
-### Transactions Collection
-```json
-{
-  "user_phone": "+1234567890",
-  "tx_hash": "0x...",
-  "from": "0x...",
-  "to": "0x...",
-  "amount": 1.5,
-  "status": "success",
-  "timestamp": "timestamp"
-}
-```
-
-### Contacts Collection
-```json
-{
-  "owner_phone": "+1234567890",
-  "name": "John",
-  "address": "0x...",
-  "created_at": "timestamp"
-}
-```
-
-## 🚀 Deployment
-
-### Local Development
-
-```bash
-npm run dev  # Development with nodemon
-npm start    # Production start
-```
-
-### Production Deployment
-
-1. **Environment Setup**
-   ```bash
-   NODE_ENV=production
-   LOG_LEVEL=warn
-   ```
-
-2. **Process Management**
-   ```bash
-   npm install -g pm2
-   pm2 start src/index.js --name zappo
-   ```
-
-3. **MongoDB Setup**
-   - Use MongoDB Atlas for production
-   - Set up proper authentication
-   - Configure network access
-
-## 🧪 Testing
-
-```bash
-npm test        # Run tests
-npm run lint    # Lint code
-```
-
-## 📝 API Reference
-
-### Command Parser
-
-The bot uses regex-based intent parsing with natural language support:
-
-```javascript
-// Parse user input
-const parsed = commandParser.parseInput("send 1 ETH to 0x1234...");
-// Returns: { intent: 'SEND_ARB', parameters: { amount: 1, recipient: '0x1234...' } }
-```
-
-### Wallet Operations
-
-```javascript
-// Create wallet
-const result = await walletHandler.createWallet(phone);
-
-// Get balance
-const balance = await transactionHandler.handleGetBalance(from, phone);
-
-// Send transaction
-const tx = await transactionHandler.handleSendTransaction(from, phone, params);
-```
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🆘 Support
-
-- **Issues**: [GitHub Issues](https://github.com/your-repo/zappo/issues)
-- **Documentation**: [Wiki](https://github.com/your-repo/zappo/wiki)
-
-## 🙏 Acknowledgments
-
-- [Baileys.js](https://github.com/WhiskeySockets/Baileys) for WhatsApp integration
-- [Privy](https://privy.io/) for wallet infrastructure
-- [Thirdweb](https://thirdweb.com/) for blockchain operations
-- [Arbitrum](https://arbitrum.io/) for the blockchain
 
 ---
 
-**Made with ❤️ for the ETH community**
+## 🎯 The Problem
 
-*ZAPPO - Bringing crypto to where people already are*
+**DeFi has $55B+ locked but remains too complex for 2.7B+ WhatsApp users.**
+
+- **Onboarding friction**: Wallets, seed phrases, bridge protocols
+- **Fiat bottleneck**: No direct INR → USDC → DeFi flow  
+- **Complex UIs**: Built for crypto natives, not normies
+- **Missed opportunity**: Zero DeFi access inside WhatsApp
+
+👉 **Result**: DeFi is an insider's game, not a mainstream financial tool.
+
+## 💡 The Solution
+
+**Zappo = Onchain finance inside WhatsApp**
+
+✅ **Chat-native interface** — No new app downloads  
+✅ **AI conversational layer** — "grow my money" → vault selection  
+✅ **Fiat integration** — INR converts to USDC behind the scenes  
+✅ **DeFi abstraction** — Outcomes, not technical steps  
+
+---
+
+## 🚀 Current Status: Testnet Prototype
+
+**Live on Arbitrum Sepolia with core DeFi functionality:**
+
+### ✅ What Works Today
+
+🤖 **AI-Powered WhatsApp Bot**
+- Natural language processing for DeFi operations
+- Conversation context and user session management
+- Smart intent detection and fallback handling
+
+⛓️ **Onchain Operations** 
+- ETH/USDC balance checking and transfers
+- Uniswap V3 token swaps (USDC ↔ WETH)
+- Custom yield vaults with real APY simulation
+
+💰 **Basic Yield Farming Protocol**
+- Zappo Yield Protocol smart contract
+- Aave integration for legitimate yield generation
+- Real-time balance tracking and yield calculation
+
+🔒 **Wallet Infrastructure**
+- Privy-powered embedded wallets
+- No seed phrase management required
+- Secure key custody and recovery
+
+### 🎯 User Experience
+
+```bash
+# Current testnet commands that work:
+User: "What's my balance?"
+Bot: "You have 0.45 ETH and 100 USDC on Arbitrum"
+
+User: "Invest 50 USDC" 
+Bot: "Deposited 50 USDC into yield vault. Current APY: 4.5% 📈"
+
+User: "Swap 10 USDC to ETH"
+Bot: "Swapped 10 USDC → 0.003 ETH. Transaction confirmed ✅"
+```
+
+---
+
+## 🏗️ Technical Architecture
+
+### Core Stack
+- **Interface**: WhatsApp (Baileys + Business API)
+- **Backend**: Node.js + MongoDB + Express
+- **Blockchain**: Arbitrum (Sepolia testnet → Mainnet)
+- **AI**: OpenRouter API with conversation management
+- **Wallets**: Privy embedded wallets (no seed phrases)
+
+### Smart Contracts
+```solidity
+contract ZappoAdvancedYieldProtocol {
+    // Aave integration for real yield
+    // User deposit tracking and tier management  
+    // Professional DeFi vault mechanics
+}
+```
+
+### Key Integrations
+- **Uniswap V3**: Token swaps and liquidity
+- **Aave Protocol**: Yield generation and lending
+- **Privy**: Embedded wallet infrastructure
+- **MongoDB Atlas**: User data and transaction history
+
+---
+
+## 📊 Market Opportunity
+
+### 🎯 Target Market
+
+**Primary**: India's 500M WhatsApp users seeking yield  
+**Secondary**: Global emerging markets with limited DeFi access  
+**Expansion**: Crypto natives wanting chat-based DeFi assistant  
+
+### 📈 Market Size
+
+- **Global crypto users**: 560M+ (growing 25% YoY)
+- **DeFi TVL**: $55B+ across protocols
+- **India opportunity**: 100M+ crypto users, blocked exchanges
+- **WhatsApp penetration**: 2.7B global, 500M India
+
+**💰 Wedge Market**: India remittances ($100B/year) + blocked CEXs = perfect DeFi onramp opportunity
+
+---
+
+## 🛣️ Roadmap: Testnet → Mainnet
+
+### Phase 1: Mainnet MVP (Q1 2024)
+- [ ] Deploy on Arbitrum mainnet
+- [ ] INR → USDC onramp integration
+- [ ] Production WhatsApp Business API
+- [ ] Enhanced yield vaults (GMX, real Aave)
+
+### Phase 2: Viral Growth (Q2 2024)  
+- [ ] Crypto gifting ("red packets")
+- [ ] Contact-to-contact USDC transfers
+- [ ] Referral rewards program
+- [ ] Multi-language support (Hindi, Spanish)
+
+### Phase 3: AI Finance Assistant (Q3 2024)
+- [ ] "Save ₹500 monthly" → automated DCA
+- [ ] Personal finance insights and recommendations  
+- [ ] Portfolio optimization suggestions
+- [ ] Multi-chain expansion (Polygon, Base)
+
+---
+
+## 🚀 Quick Start (Testnet)
+
+### Prerequisites
+- Node.js 16.18.1+
+- MongoDB Atlas account
+- Privy developer account
+- WhatsApp Business account
+
+### 1. Clone & Install
+```bash
+git clone https://github.com/Zappo-Offl/service.git
+cd service
+npm install --legacy-peer-deps
+```
+
+### 2. Environment Setup
+```bash
+cp env.example .env
+```
+
+**Required Environment Variables:**
+```env
+# Privy Wallet Infrastructure
+PRIVY_APP_ID=your_privy_app_id
+PRIVY_APP_SECRET=your_privy_app_secret
+
+# Arbitrum Testnet
+ARB_RPC_URL=https://sepolia-rollup.arbitrum.io/rpc
+ARB_CHAIN_ID=421614
+
+# Database
+MONGODB_URI=your_mongodb_atlas_uri
+
+# AI Engine  
+OPENROUTER_API_KEY=your_openrouter_key
+AI_ENABLED=true
+```
+
+### 3. Start the Bot
+```bash
+# With AI enabled
+npm run start:ai
+
+# Traditional mode
+npm run start:no-ai
+```
+
+### 4. WhatsApp Connection
+1. Scan QR code from terminal
+2. Send "hi" to test basic functionality  
+3. Try: "balance", "invest 10 USDC", "swap 5 USDC to ETH"
+
+---
+
+## 🏆 Competitive Advantages
+
+| **Zappo** | **Traditional DeFi** | **Centralized Exchanges** |
+|-----------|---------------------|---------------------------|
+| 💬 WhatsApp-native | 🌐 Browser dApps | 📱 Separate apps |
+| 🤖 AI conversations | 🛠️ Technical interfaces | 📊 Trading focused |
+| 💸 Fiat integration | 🔗 Bridge complexity | ❌ India restrictions |
+| 🚀 No seed phrases | 🔑 Private key management | 🏦 KYC friction |
+
+**Key differentiator**: We abstract DeFi complexity while maintaining full decentralization.
+
+---
+
+## 📋 Project Structure
+
+```
+zappo-service/
+├── main.js                 # Application entry point
+├── ai-engine/              # Conversational AI system
+│   ├── core/aiService.js   # AI processing and context
+│   └── config/aiConfig.js  # AI model configuration
+├── src/
+│   ├── handlers/           # Transaction & wallet logic
+│   ├── services/           # Database, WhatsApp, Privy
+│   └── config/index.js     # Environment configuration
+├── Web3/
+│   ├── contracts/zappo.sol # Yield farming smart contract
+│   ├── swap.js            # Uniswap V3 integration
+│   └── abis/              # Contract interfaces
+└── bridge/                # Message routing system
+```
+
+---
+
+## 🤝 Contributing
+
+We're building the future of accessible DeFi. Contributions welcome!
+
+### Development Workflow
+1. **Fork** the repository
+2. **Create** feature branch: `git checkout -b feature/amazing-feature`
+3. **Test** on Arbitrum Sepolia testnet
+4. **Commit** with clear messages
+5. **Submit** pull request
+---
+
+## 📞 Contact & Community
+
+- **GitHub**: [@Zappo-Offl](https://github.com/Zappo-Offl)
+- **Docs**: Coming soon with mainnet launch
+
+---
+
+## 🎯 The Vision
+
+> *"Billions already use WhatsApp. Now they can grow wealth, send money, and access DeFi—in the same chat. Zappo makes onchain finance as simple as messaging a friend."*
+
+**We're not just building another DeFi protocol. We're onboarding the next billion users to Web3.**
+
+---
+
+<div align="center">
+
+**⚡ Ready to make DeFi accessible to everyone?**
+
+[Get Started](#-quick-start-testnet) • [View Demo](https://sepolia.arbiscan.io) • [Join Community](#-contact--community)
+
+</div>
